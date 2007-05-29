@@ -1,0 +1,534 @@
+\documentclass[12pt]{article}
+
+\usepackage[round]{natbib}
+\bibliographystyle{abbrvnat}
+
+\author{David Kane\footnote{Institute Fellow, IQSS, Harvard
+    University, Cambridge, MA 02138. dkane@iq.harvard.edu. Thanks to
+    Arjun Ravi Narayan for excellent research assistance.}}
+
+\title{Overview of Data Associated With Lancet Surveys of Mortality in Iraq}
+
+\date{May 29, 2007}
+
+
+\begin{document}
+
+\maketitle
+
+
+%\VignetteIndexEntry{Examining the dataset from the Lancet study on Iraq Mortality}
+%\VignetteDepends{}
+
+
+<<echo = false, results = hide>>=
+library("lancet.iraqmortality")
+library("foreign")
+library(MASS)
+
+houses <- prep.houses()
+deaths <- prep.deaths()
+attach(deaths)
+data(lancet1)
+
+options(digits = 2)
+options(width = 60)
+@ 
+
+
+
+\section*{Introduction}
+
+The \emph{Lancet} published two controversial articles about mortality
+in Iraq: \citet{lancet.1} and \citet{lancet.2}.  This article and the
+accompanying \textbf{R} software package have three purposes. First, I provide a data
+frame of the publicly available data distributed from
+\citet{lancet.1}.\footnote{I thank Tim Lambert of Deltoid for posting
+  the summary data associated with \citet{lancet.1}. I thank the
+  authors of \citet{lancet.2} for making their data available to me. I
+  urge them to make the data available to all.  I also thank Shannon
+  Doocy for patiently answering my questions.}  Second, since the underlying
+data from \citet{lancet.2} has been made available to some researchers
+but not others, I provide a summary of the restricted data.  Third,
+for those with access, I provide some basic functions for working with
+the data.
+
+
+\section*{Data from \citet{lancet.1}}
+
+Typing \texttt{data(lancet1)} after installing the package loads the
+data frame.  \textbf{lancet1} contains \Sexpr{dim(lancet1)[2]}
+variables and \Sexpr{dim(lancet1)[1]} rows, one for each of the
+clusters. The variables split broadly into two categories:
+pre-invasion and post-invasion. Statistics for each cluster include
+the number of births, deaths (infant and total), and persons (in
+different age groups) alive.
+
+The person-months in each period is provided, although the exact
+calculation is unavailable to us, as the dataset does not include the
+timings of the births and deaths in each cluster. The mortality rate
+pre-invasion is calculated as
+$\frac{pre.deaths*12000}{pre.person.months}$. This same calculation is
+done for post-invasion mortality. The difference is used to calculate
+diff.mort.rate. 
+
+
+\begin{center}
+<<fig = TRUE, echo = FALSE>>=
+truehist(lancet1$diff.mort.rate, nbins = 30, prob = FALSE, main = "Increase in Mortality After Invasion", xlab = "Difference in Mortality per 1,000", ylab = "Number of Clusters")
+@
+\end{center}
+
+
+Summary statistics for diff.mort.rate are:
+
+<<echo=false>>=
+summary(lancet1$diff.mort.rate)
+@ 
+
+The Falluja cluster is the outlier, with an increase in mortality of
+\Sexpr{round(subset(lancet1, cluster=="Falluja")["diff.mort.rate"])}
+per 1,000.  Removing this cluster yields:
+
+<<echo=false>>=
+summary(subset(lancet1, cluster!="Falluja")[["diff.mort.rate"]])
+@
+
+Since all the (public) data is available in the package, I do not
+provide further analysis here.
+
+
+\section*{Data from \citet{lancet.2}}
+
+I have performed a series of manipulations to the raw data as
+distributed by the authors. See the functions \texttt{prep.deaths()}
+and \texttt{prep.houses()} for details. Each function produces a data
+frame. Call them \textbf{deaths} and \textbf{houses}. With
+\Sexpr{dim(deaths)[1]} rows and \Sexpr{dim(deaths)[2]} variables,
+\textbf{deaths} includes a row for every death recorded in the study.
+The variables are:
+
+\begin{itemize}
+  
+\item[id] A number for each household interviewed. Multiple deaths
+  from the same household share the same id. There is no unique id in
+  the \textbf{deaths} data frame.
+  
+\item[governorate] The governorate in which the household of the
+  deceased is located. There are 18 governorates in Iraq, but
+  miscommunication led to only \Sexpr{nlevels(governorate)} being
+  sampled by the survey team.
+  
+\item[cluster] The cluster in which the household of the deceased was
+  located. There are \Sexpr{nlevels(cluster)} clusters. Clusters are
+  numbered from 1 to 51. Numbers 17, 19, 29 and 50 are missing. The
+  authors sampled 50 clusters, but three were discarded.
+  
+\item[date] The death month. Although the actual date of death was
+  recorded by the interviewers, the authors transform all dates to the
+  first day of the respective months to protect participant identity.
+  There are \Sexpr{dim(subset(deaths, is.na(date)))[1]} missing dates.
+  
+\item[year] The year of death. There are no missing values. The
+  number of deaths by year are:
+
+<<echo=false>>=
+table(deaths$year)
+@ 
+
+The survey ended in July 2006, so mortality has increased every year.
+
+\item[sex] There were \Sexpr{dim(subset(deaths, sex=="male"))[1]} male
+  deaths and \Sexpr{dim(subset(deaths, sex=="female"))[1]} female
+  deaths.
+  
+\item[age] The age of the deceased person. Summary statistics are:
+
+<<echo=false>>=
+summary(age)
+@ 
+
+\item[age.group] The age group of the deceased. Following Table 2 in
+  the article, categories are child (0-14 years), adult (15-59 years),
+  and elderly (60+). 
+
+<<echo=false>>=
+table(sex, age.group)
+@ 
+
+This ignores the 19 deaths with NA age.
+
+\item[post.invasion] A binary variable indicating whether the death
+  occurred before or after the invasion in March 2003. This is
+  provided even when there is no date of death. There are
+  \Sexpr{dim(subset(deaths, post.invasion=="yes"))[1]} deaths
+  post-invasion and \Sexpr{dim(subset(deaths, post.invasion=="no"))[1]} deaths 
+  pre-invasion.
+  
+\item[impute] A TRUE/FALSE flag indicating whether an imputation was
+  done to fill in the year and post.invasion variables even if the
+  date of death was missing. There are \Sexpr{dim(subset(deaths, impute==TRUE))[1]} TRUE 
+values for impute. In each of these cases,
+  date is NA. There are a total of \Sexpr{sum(is.na(deaths$date))} NA
+  dates. For the \Sexpr{sum(is.na(deaths$date)) - sum(deaths$impute)}
+    observations with NA date and impute equal to FALSE, the
+    interviewers were able to establish the year and whether or not
+    the death happened after the invasion, so no imputation was
+    necessary.
+  
+\item[cause.summary] A brief summary that describes the cause of death
+  using one of \Sexpr{length(unique(cause.summary))} different
+  categories. The five most common are:
+
+<<echo=false>>=
+sort(table(deaths$cause.summary), decreasing=TRUE)[1:5]
+@ 
+
+\item[death.nature] A binary variable indicating whether the death was
+  due to violent or non-violent causes. There are
+  \Sexpr{dim(subset(deaths, death.nature=="violent"))[1]} violent
+  deaths and \Sexpr{dim(subset(deaths, death.nature=="non-violent"))[1]} non-violent 
+  deaths.
+
+<<echo=false>>=
+table(deaths$death.nature, deaths$age.group, dnn = NULL)
+@ 
+
+This ignores the 19 deaths with NA age.
+
+\item[cause.category] The authors aggregate cause.summary into
+  \Sexpr{nlevels(deaths$cause.category)} higher level categories.
+
+<<echo=false>>=
+table(deaths$cause.category)
+@ 
+
+\item[has.certificate] A binary variable indicating whether a death
+  certificate was presented to the interviewers or not. There are
+  \Sexpr{dim(subset(deaths, is.na(has.certificate)))[1]} NA entries.
+  \citet{burnham.mit.2007} reports that the NA cases arose when the
+  interviewer ``forgot'' to ask for a certificate.
+
+\end{itemize}
+
+The second data frame, \textbf{houses}, has \Sexpr{dim(houses)[1]}
+rows and \Sexpr{dim(houses)[2]} variables, one of which (id) can be
+used for linking to the \textbf{deaths} data frame. The period covers
+January 1, 2002 through the date of the survey, which ranges from May
+20, 2006 through July 10, 2006.
+
+\begin{itemize}
+  
+\item[id, governorate, cluster] The same as in the \textbf{deaths}
+  data frame.
+  
+\item[size] The number of household members at the time of survey.
+
+<<echo=false>>=
+summary(houses$size)
+@ 
+
+\item[males, females] The number of males/females in the household. There are
+  \Sexpr{sum(is.na(houses$males))} NA values.
+    
+\item[births] The number of births in the household.
+
+<<echo=false>>=
+table(houses$births)
+@
+
+\item[deaths] The number of deaths in the household.
+
+<<echo=false>>=
+table(houses$deaths)
+@ 
+
+\item[immigration] The number of immigrants to the household.  There
+  are \Sexpr{dim(subset(houses, immigration==0))[1]} houses with zero
+  immigrants. The summary statistics of the remaining households are:
+
+<<echo=false>>=
+summary(houses$immigration[houses$immigration>1])
+@ 
+
+\item[emigration] The number of emigrants from the household.  There
+  are \Sexpr{dim(subset(houses, emigration==0))[1]} houses with zero
+  emigrants. The summary statistics of the remaining households are:
+
+<<echo = false>>=
+summary(houses$emigration[houses$emigration>1])
+@ 
+
+<<echo = false>>=
+y <- houses$size.2002 - (houses$size - houses$births + houses$deaths)
+@
+
+\item[size.2002] The number of household members on January 1, 2002.
+  This is the number of members at the time of the survey (size) minus
+  births plus deaths.  For \Sexpr{table((y!=0))[2]} observations, this
+  does not add up. These mistakes occurred in 3 clusters (34, 36 and
+  49).  As with size, there are \Sexpr{sum(is.na(houses$size.2002))}
+  NA values, and the NA values for size.2002 are for the same rows as
+  the NA values for size.
+
+  \item[size.2002.mig] The number of members of the household as of
+  January 1, 2002, including migration: size minus births plus deaths
+  minus immigration plus emigration. There are no further errors in
+  the migration calculations other than those also occurring in
+  size.2002.  However, there are \Sexpr{dim(subset(subset(houses, is.na(size.2002.mig)), !is.na(size.2002)))} more NA values in
+  size.2002.mig than in size.2002. But, there are no NA values in
+  immigration or emigration, so it is not clear where these additional
+  NAs come from.
+  
+\item[mid.2002] The average of size and size.2002. There are
+  \Sexpr{sum(is.na(houses$size.2002))} NA observations, consistent
+  with the NAs in size.2002.
+  
+\item[mid.2002.mig] The average of size and size.2002.mig. There are
+  \Sexpr{sum(is.na(houses$size.2002.mig))} NA observations, consistent
+  with the NAs in size.2002.mig.
+
+\item[has.death] A binary variable indicating if there were any deaths
+  in the household. There are
+  \Sexpr{dim(subset(houses, houses$has.death=="yes"))[1]} households
+  with at least one death.
+
+\item[deaths.violent] The number of violent deaths.
+
+<<echo=false>>=
+table(houses$deaths.violent)
+@ 
+
+\item[deaths.nonviolent] The number of non-violent deaths.
+
+<<echo=false>>=
+table(houses$deaths.nonviolent)
+@ 
+
+Note that the number of violent/non-violent deaths is inconsistent
+between the \textbf{deaths} and \textbf{houses} data frames. In
+\textbf{deaths}, there are 302 violent deaths and 327 non-violent
+deaths, just as \citet{lancet.2} reports. In
+the \textbf{houses} data frame, there are
+\Sexpr{sum(houses$deaths.violent)} violent deaths and
+\Sexpr{sum(houses$deaths.nonviolent)} non-violent ones. It is not
+clear what the reason is for this discrepancy.
+
+% Not sure if I want to study the merged data frame more closely, but here it is.
+% I should look at the observations that don't fit.
+
+<<echo = false>>=
+x <- merge(deaths, houses, by = c("id", "governorate", "cluster"), all = TRUE)
+@
+
+\end{itemize}
+
+
+\section*{Comments}
+
+This section provides a guided tour of some of the more interesting features of the data frames.
+
+\subsection*{Clusters}
+
+
+The clusters in the data set are labeled from 1 to 51, with missing
+numbers at 17, 19, 29 and 50. In general, cluster numbers are grouped
+within governorates. For example, the three Thi-Qar clusters are 11,
+12 and 13.  The five in Ninewa are 34 -- 38. The two in Saleh Al-Din
+are 47 and 48. A prominent exception to this pattern is Baghdad, which
+includes clusters 14 -- 24 (with 17 and 19 missing), 33, 39 and 40.
+
+\citet{lancet.2} state:
+
+
+\begin{quote}
+  Only 47 of the sought 50 clusters were included in this analysis. On
+  two occasions, miscommunication resulted in clusters not being
+  visited in Muthanna and Dahuk, and instead being included in other
+  Governorates. In Wassit, insecurity caused the team to choose the
+  next nearest population area, in accordance with the study protocol.
+  Later it was discovered that this second site was actually across
+  the boundary in Baghdad Governorate. These three misattributed
+  clusters were therefore excluded, leaving a final sample of 1849
+  households in 47 randomly selected clusters.
+\end{quote}
+
+It is not clear why there is a cluster numbered 51 (located in Anbar)
+if the original plan called for only 50 clusters. The other two Anbar
+clusters are 30 and 31.
+
+\citet{burnham.mit.2007} mentions that they sampled three clusters in
+Falluja (which is in the Anbar province) even though the plan called
+for only one cluster. They did this because the Falluja data from
+\citet{lancet.1} was such an outlier that they wanted a better
+estimate for this violent city. Having interviewed in three clusters,
+the authors then selected one of the three randomly. The selected
+cluster was the least violent of the three. It seems plausible that
+this ``extra'' cluster is 51.
+
+\subsection*{Interview Procedure}
+
+The paper states that the interviewers went to houses in each cluster
+until they completed 40 interviews.
+
+\begin{quote}
+  Empty houses or those that refused to participate were passed over
+  until 40 households had been interviewed in all locations.
+\end{quote}
+
+However, the data shows that only
+\Sexpr{table(table(houses["cluster"]))[["40"]]} of 47 clusters featured
+exactly 40 interviews. The following table shows the number of
+clusters for each total number of houses interviewed:
+
+<<echo=false>>=
+table(table(houses["cluster"]))
+@ 
+
+The clusters with 41 households were 23 (Baghdad) and 37 (Ninewa).
+Those with fewer than 38 were 3 (Najaf), 9 (Babylon) and 26
+(Sulaymaniyah). This variation is troubling. If clusters in violent
+regions had more interviews than those in less violent regions, the
+calculated mortality rate might be too high.
+This problem may have occurred.  For example, Sulaymaniyah (in the
+Kurdish north) should have featured 120 interviews, 40 for each of the
+three clusters. Instead, only
+\Sexpr{table(houses$governorate)[["Sulaymaniyah"]]} households were
+interviewed. Since Sulaymaniyah featured \emph{no} violent deaths,
+interviewing fewer households there inflates the estimate of
+post-invasion violent mortality in Iraq.\footnote{This would
+  depend on the precise method used to calculate excess mortality. If the calculation were based on estimating mortality within each cluster and then aggregating these cluster estimates, it would not bias the results if less violent clusters had more interviews.}
+
+Yet the claim that interviews were conducted until 40 households
+agreed to participate is contradicted elsewhere in the article.
+
+\begin{quote}
+  In 16 (0.9\%) dwellings, residents were absent; 15 (0.8\%)
+  households refused to participate. In the few apartment houses
+  visited, the team progressed to the nearest households within the
+  building.  One team could typically complete a cluster of 40
+  households in 1 day.
+\end{quote}
+
+If 40 households had been interviewed in each of the 47 retained
+clusters, there would be 1,880 rows in \textbf{houses}. The claim that
+31 households were either absent or refused to participate is
+consistent with the \Sexpr{dim(houses)[1]} observations actually
+present. It is unclear how one can reconcile this description
+(absences/refusals were not replaced) with the previous claim that
+``40 households had been interviewed in all locations.''
+
+
+\subsection*{Death Certificates}
+
+The authors claim that missing death certificates, whether caused by
+the failure of the interviewer to ask or by the inability of the
+interviewee to produce one, are not a problem because there is no
+correlation between this missingness and other variables.
+
+\begin{quote}  
+  Survey teams asked for death certificates in 545 (87\%) reported
+  deaths and these were present in 501 cases. The pattern of deaths in
+  households without death certificates was no different from those
+  with certificates.
+\end{quote}
+
+There were \Sexpr{sum(deaths$has.certificate %in% c("yes"))} deaths with
+death certificates, \Sexpr{sum(deaths$has.certificate %in% c("no"))}
+  without and  \Sexpr{sum(is.na(has.certificate))}
+  observations with NA values. The two locations with the largest number of NA values were both in Baghdad: cluster 33 (\Sexpr{sum(is.na(deaths$has.certificate) & deaths$cluster %in% c(33))} deaths) and cluster 24 
+(\Sexpr{sum(is.na(deaths$has.certificate) & deaths$cluster %in% c(24))} deaths).
+
+There were \Sexpr{sum(is.na(deaths$date) & deaths$has.certificate %in% c("yes"))} deaths 
+  for which a certificate was provided, but no date of death is
+  listed. This is interesting as one would expect that death
+  certificates provide the date of death.  There were
+\Sexpr{sum(is.na(deaths$date) & deaths$has.certificate %in% c(NA))} deaths 
+for which the death certificate was not asked for and the date of death is NA. It would seem especially important to ask for a death certificate when the interviewee can not recall the date of death. 
+
+
+The asking rate for death certificates is correlated with the year of
+the death --- the later the year, the higher the
+likelihood of the interviewers not asking for a death certificate.
+It is unclear why interviewers would be more likely to ``forget'' to
+ask for a certificate if the death occurred in 2006 rather than 2002.
+
+% Sure would be nice to have some percentages in these tables.
+
+<<echo=false>>=
+table(! is.na(deaths$has.certificate), deaths$year, dnn = c("Asked For Death Certificate", "Year"))
+@ 
+
+Of the 64 deaths in 2002, the interviewers forgot to ask for a death
+certificate 3\% of the time. This percentage increases steadily until
+it hits 24\% in 2006. There is correlation with the nature of the
+death as well.
+
+<<echo=false>>=
+table(! is.na(deaths$has.certificate), deaths$death.nature, dnn = c("Asked For Death Certificate", "Nature of Death"))
+@ 
+
+It is unclear why the nature of a death would make an interviewer more
+likely to forget to ask for a death certificate. In the case of
+non-violent deaths, the interviewers forget to ask 4\% of the time.
+For violent deaths, the forget-to-ask rate is 23\%.
+
+\subsection*{Cluster 33}
+
+Cluster 33 has a total of \Sexpr{sum(deaths$cluster == 33)}
+deaths. All \Sexpr{sum(is.na(deaths$has.certificate) & deaths$cluster == 33)} of
+the deaths with NA death certificates had the same cause
+(``\Sexpr{as.character(unique(subset(subset(deaths, cluster==33), is.na(has.certificate))["cause.summary"])[1,1])}'') and occurred in
+the same month (July 2006). Since data
+collection ended on July 10th, these deaths must have happened prior to 
+that date. It is not clear why death certificates were not asked for.
+Since the survey started on May 20th, the interviewers, by this
+point, had 6 weeks to learn to remember to ask for death certificates.
+It is also not clear how they remembered to ask for a death
+certificate in the one other death in this cluster, a non-violent
+heart attack.
+
+Besides the issue of missing death certificates, there are two other
+problems with this cluster. First, the authors report that ``deaths
+from car explosions have increased since late 2005.'' This is true but
+misleading. Consider total mortality from car bombs in 6 month intervals.
+
+
+<<echo = false>>=
+deaths$period <- ifelse(deaths$date <= as.Date("2003-12-31"), "pre-2004", NA)
+deaths$period <- ifelse(deaths$date >  as.Date("2003-12-31") & deaths$date <  as.Date("2004-06-30"), "Jan-Jun 2004", deaths$period)
+deaths$period <- ifelse(deaths$date >  as.Date("2004-06-30") & deaths$date <  as.Date("2004-12-31"), "Jul-Dec 2004", deaths$period)
+deaths$period <- ifelse(deaths$date >  as.Date("2004-12-31") & deaths$date <  as.Date("2005-06-30"), "Jan-Jun 2005", deaths$period)
+deaths$period <- ifelse(deaths$date >  as.Date("2005-06-30") & deaths$date <  as.Date("2005-12-31"), "Jul-Dec 2005", deaths$period)
+deaths$period <- ifelse(deaths$date >  as.Date("2005-12-31") & deaths$date <  as.Date("2006-06-30"), "Jan-Jun 2006", deaths$period)
+deaths$period <- ifelse(deaths$date >  as.Date("2006-06-30"), "Jul 2006", deaths$period)
+deaths$period <- factor(deaths$period, levels = c("pre-2004", "Jan-Jun 2004", "Jul-Dec 2004", "Jan-Jun 2005", "Jul-Dec 2005", "Jan-Jun 2006", "Jul 2006"))
+y <- subset(deaths, cause.category %in% c("carbomb"))
+table(y$period)
+@
+
+There were no deaths from car bombs prior to 2004, but mortality was
+largely constant for the 2.5 years from January 2004 through June
+2006. There were 6 deaths in 2004, 6 in 2005 and 2 in the first six
+months of 2006.  The entire rise in car bombs deaths come from the
+data for one month in one cluster.
+
+The second problem with this cluster is the implications of having so
+many deaths from car bombs (or, more likely, a single car bomb) centered on
+a single neighborhood. \citet{msb} argue that the methodology of
+\citet{lancet.2} generated a ``main street bias'' because interviewers
+  were more likely to select households near main streets where
+  violence is more common. This cluster would seem to provide evidence
+  that main street bias might be a concern.
+
+\section*{Conclusion}
+
+I hope that this brief description of the data is useful to those who
+are interested in the Lancet articles but do not have access to the
+data and that the tools provided here are also useful to those who
+have such access. I hope to extend this article in the near future to
+include more analysis. Please contact me with suggestions.
+
+\bibliography{mortality}
+
+\end{document}

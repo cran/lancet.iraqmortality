@@ -1,0 +1,4 @@
+export(
+       "prep.deaths",
+       "prep.houses"
+       )
