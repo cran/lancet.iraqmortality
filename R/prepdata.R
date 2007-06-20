@@ -86,10 +86,10 @@
 
   ## Construct paths to both input files and load them up using read.dbf.
   
-  deaths.file <- file.path(tmpdir, "Iraq Mortality Public Distribution Files",
-                           "Iraq 2006 deaths.dbf")
-  houses.file <- file.path(tmpdir, "Iraq Mortality Public Distribution Files",
-                           "Iraq 2006 households.dbf")
+  deaths.file <- file.path(tmpdir, "Iraq Mortality Study Data Release Update",
+                           "Iraq 06 Deaths Distribution 06.14.dbf")
+  houses.file <- file.path(tmpdir, "Iraq Mortality Study Data Release Update",
+                           "Iraq 06 Household Distribution 06.14.dbf")
   
   deaths <- read.dbf(deaths.file)
   houses <- read.dbf(houses.file)

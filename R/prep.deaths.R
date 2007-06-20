@@ -16,8 +16,8 @@ prep.deaths <- function(){
             )
   
   names(x) <- c("id", "governorate", "cluster", "date", "year",
-                "impute", "post.invasion", "sex", "age", "cause.summary",
-                "cause.category", "death.nature", "has.certificate")
+                "impute", "invasion", "sex", "age", "cause.summary",
+                "cause.category", "death.nature", "certificate")
 
   ## Provide specific values for the levels from the code book
   ## distributed with the zip file.
@@ -30,7 +30,7 @@ prep.deaths <- function(){
   x$cluster       <- as.factor(x$cluster)
   x$sex           <- factor(x$sex, labels = c("male","female"))
   x$impute        <- ifelse(x$impute %in% c(1), TRUE, FALSE)
-  x$post.invasion <- factor(x$post.invasion, labels = c("no","yes"))
+  x$invasion      <- factor(x$invasion, labels = c("pre","post"))
   x$cause.summary <- as.factor(x$cause.summary)
   x$death.nature  <- factor(x$death.nature, labels = c("violent","non-violent"))
   
@@ -40,7 +40,11 @@ prep.deaths <- function(){
                                "heart disease or stroke","chronic illness","infection disease",
                                "infant death","non-violent, other"))
 
-  x$has.certificate <- factor(x$has.certificate, labels=c("no","yes"))
+  ## NA certificate means the interviewers forgot to ask for one.
+
+  x$certificate[is.na(x$certificate)] <- 2
+  
+  x$certificate <- factor(x$certificate, labels = c("no","yes","forgot"))
   
   ## Add an age.group variable to go along with Table 2 in the paper
   
@@ -50,18 +54,17 @@ prep.deaths <- function(){
   x$age.group <- factor(x$age.group, levels = c("child","adult","elderly"))
 
   ## In a private communication, Shannon Doocy points out that there
-  ## are two mistaken variables for has.certificate. I correct them
+  ## is a mistake in certificate for one observation. I correct it
   ## here. This makes the number of deaths with a certificate 501,
   ## consistent with the paper.
 
-  x[x$id == 1346 & x$date == as.Date("2005-11-01"), "has.certificate"] <- "yes"
-  x[x$id == 1391 & x$date == as.Date("2005-06-01") & x$age == 0, "has.certificate"] <- "yes"
+  x[x$id == 1346 & x$date == as.Date("2005-11-01"), "certificate"] <- "yes"
 
   ## Put everything in a convenient order.
 
   x <- x[c("id", "governorate", "cluster", "date", "year", "sex", "age", "age.group",
-           "impute", "post.invasion",
-           "cause.summary", "cause.category", "death.nature", "has.certificate")]
+           "impute", "invasion",
+           "cause.summary", "cause.category", "death.nature", "certificate")]
 
   
   return(x)

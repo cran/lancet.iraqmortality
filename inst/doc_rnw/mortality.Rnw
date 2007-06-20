@@ -7,9 +7,10 @@
     University, Cambridge, MA 02138. dkane@iq.harvard.edu. Thanks to
     Arjun Ravi Narayan for excellent research assistance.}}
 
-\title{Overview of Data Associated With Lancet Surveys of Mortality in Iraq}
+\title{\emph{The Lancet} Surveys of Mortality in Iraq}
 
-\date{May 29, 2007}
+\date{First Draft: May 29, 2007\\
+      This Draft: June 20, 2007}
 
 
 \begin{document}
@@ -17,7 +18,7 @@
 \maketitle
 
 
-%\VignetteIndexEntry{Examining the dataset from the Lancet study on Iraq Mortality}
+%\VignetteIndexEntry{The Lancet Surveys of Mortality in Iraq}
 %\VignetteDepends{}
 
 
@@ -39,19 +40,17 @@ options(width = 60)
 
 \section*{Introduction}
 
-The \emph{Lancet} published two controversial articles about mortality
+\emph{The Lancet} published two controversial articles about mortality
 in Iraq: \citet{lancet.1} and \citet{lancet.2}.  This article and the
-accompanying \textbf{R} software package have three purposes. First, I provide a data
-frame of the publicly available data distributed from
+accompanying \textbf{R} software package have four purposes. First, I provide data from
 \citet{lancet.1}.\footnote{I thank Tim Lambert of Deltoid for posting
   the summary data associated with \citet{lancet.1}. I thank the
   authors of \citet{lancet.2} for making their data available to me. I
-  urge them to make the data available to all.  I also thank Shannon
-  Doocy for patiently answering my questions.}  Second, since the underlying
-data from \citet{lancet.2} has been made available to some researchers
+  urge them to make the data available to all.  Shannon Doocy, Jeff Enos and Michael Spagat provided comments on an earlier draft. I also thank Shannon
+  Doocy for patiently answering my questions about the data.}  Second, since the data from \citet{lancet.2} has been made available to some researchers
 but not others, I provide a summary of the restricted data.  Third,
 for those with access, I provide some basic functions for working with
-the data.
+the data. Fourth, I provide some critical comments.
 
 
 \section*{Data from \citet{lancet.1}}
@@ -61,21 +60,22 @@ data frame.  \textbf{lancet1} contains \Sexpr{dim(lancet1)[2]}
 variables and \Sexpr{dim(lancet1)[1]} rows, one for each of the
 clusters. The variables split broadly into two categories:
 pre-invasion and post-invasion. Statistics for each cluster include
-the number of births, deaths (infant and total), and persons (in
-different age groups) alive.
+the number of births, deaths (infant and total), and persons alive (in
+different age groups).
 
-The person-months in each period is provided, although the exact
-calculation is unavailable to us, as the dataset does not include the
-timings of the births and deaths in each cluster. The mortality rate
+The total person-months in each period is provided.\footnote{The exact
+details are unavailable to us since the data does not include the
+timings of the births and deaths within each cluster. } The mortality rate
 pre-invasion is calculated as
 $\frac{pre.deaths*12000}{pre.person.months}$. This same calculation is
 done for post-invasion mortality. The difference is used to calculate
-diff.mort.rate. 
+diff.mort.rate for each cluster. 
 
 
 \begin{center}
 <<fig = TRUE, echo = FALSE>>=
 truehist(lancet1$diff.mort.rate, nbins = 30, prob = FALSE, main = "Increase in Mortality After Invasion", xlab = "Difference in Mortality per 1,000", ylab = "Number of Clusters")
+text(x= 175, y = 1.5, label = "Falluja",  cex = 1.5)
 @
 \end{center}
 
@@ -88,23 +88,240 @@ summary(lancet1$diff.mort.rate)
 
 The Falluja cluster is the outlier, with an increase in mortality of
 \Sexpr{round(subset(lancet1, cluster=="Falluja")["diff.mort.rate"])}
-per 1,000.  Removing this cluster yields:
+per 1,000.  Removing this observation yields:
 
 <<echo=false>>=
 summary(subset(lancet1, cluster!="Falluja")[["diff.mort.rate"]])
 @
 
 Since all the (public) data is available in the package, I do not
-provide further analysis here.
+provide further analysis here.\footnote{Note that the authors have
+  refused to provide data at any level more detailed than cluster
+  aggregates. There is no way to perform a thorough comparison of the
+  results of \citet{lancet.1} and \citet{lancet.2} without such
+  access. Why do the authors provide (most of whom overlap between the
+  two surveys) refuse to do so? I do not know.}  However, I am concerned that the
+presentation of the confidence interval in \citet{lancet.1} is
+misleading. The authors claim:
 
+\begin{quote}
+  The risk of death was estimated to be 2.5-fold (95\% CI 1.6 -- 4.2)
+  higher after the invasion when compared with the pre-invasion period.
+  Two-thirds of all violent deaths were reported in one cluster in the
+  city of Falluja. If we exclude the Falluja data, the risk of death
+  is 1.5-fold (1.1 -- 2.3) higher after the invasion. We estimate that
+  98,000 more deaths than expected (8,000 -- 194,000) happened after
+  the invasion outside of Falluja and far more if the outlier Falluja
+  cluster is included.
+\end{quote}
+
+First, any empirical researcher is vaguely suspicious of a result
+which just barely rejects the primary null hypothesis, in this case,
+that the war has not increased mortality in Iraq. Isn't it likely that
+a small change in the model specification would lead to a confidence
+interval which includes zero? Since the authors refuse to provide
+\emph{anyone} with the underlying data (or even a precise description
+of the actual methodology), there is no way for outsiders to know for
+sure. Second, almost all readers of the article would conclude that
+excluding Falluja was ``conservative'' because the result would
+certainly be more statistically (and substantively) significant if the
+Falluja data is included.
+
+Yet it is not clear that excluding Falluja is ``conservative.'' In
+fact, I \emph{think} that including this cluster --- i.e., using all
+the available data --- generates a result with such a wide confidence
+interval that we can not even reject the primary null hypothesis that the war
+has not increased Iraqi mortality.
+
+Consider \citet{roberts.ni.2006}.
+
+\begin{quote}
+  There was one place, the city of Falluja which had just been
+  devastated by shelling and bombing. It was so far out of whack with
+  all the other [clusters] that it just made our confidence intervals
+  very, very wide.
+\end{quote}
+
+\citet{burnham.mit.2007} goes further.
+
+\begin{quote}
+  We got a huge amount of criticisms for these confidence intervals,
+  and I'll come to this confidence interval in just a bit. But we had
+  a confidence interval at the low end of 8,000 and at the high end of
+  194,000.  \ldots
+  
+  Now this is what the confidence intervals would look like. There is
+  a 10\% probability that it was less than 44,000 and only a 2.5\%
+  chance that it was less than 8,000. If we put Falluja into it, the
+  top end of the confidence interval would be infinity. It really
+  skewed things so badly that we decided that we should just leave it
+  out and be conservative.
+
+\end{quote}
+
+It is not ``conservative'' to leave out data when, if that data were
+included, your primary finding would disappear. Moreover, it is even
+worse not to tell your readers about this fact.
+ 
+What is the intuition for how including a cluster with such a large
+increase in mortality could change the result from statistically
+significant to statistically insignificant? Consider the figure. The
+reason that cluster sampling is, sometimes, less accurate the fully
+random sampling is that the effect of interest may be ``clumped.''
+Imagine that all the war-deaths were in one city. It would be easy
+for a cluster survey to report no increase in mortality if, by chance,
+that unlucky city were not randomly selected. The phrasing may be awkward, but
+cluster sampling works less well when deaths are clustered.
+
+The reason that the inclusion of Falluja explodes the confidence
+interval is that the pattern of mortality \emph{across clusters}
+allows us to calculate how clustered death is in post-invasion Iraq.
+If you ignore Falluja, then the clumping of excess mortality does
+not look too problematic. Deaths are not concentrated in any one
+cluster.  If, having looked at 32 clusters, you don't find any with
+especially big increases (or decreases) in mortality, you can conclude
+that your cluster sample is almost as good as a fully random sample.
+But, if you look at all 33 clusters, you see that there is evidence of
+significant clumping, that at least some cities are
+\emph{dramatically} more violent than others.
+ 
+The problem for \citet{lancet.1} is that the existence of Falluja
+means that there might also be a city which featured a \emph{decrease}
+in mortality which was just as dramatic as the increase in Falluja.
+Evidence of clumping in one direction means that there might be
+clumping in the other direction as well, that there might be a city in
+Iraq that was incredibly violent during the last year of Saddam
+Hussein's rule but which is now much more peaceful. The fact that
+\citet{lancet.1} did not find such a city does not mean that it does
+not exist.
+ 
+Of course, we have all sorts of prior evidence for doubting this
+scenario, for not believing that there was any place in Iraq that was
+as violent in 2002 as Falluja was in 2004. Yet the formulas for
+cluster modeling do not include this sort of prior information by
+default. The Falluja ``outlier'' is clear evidence that outliers exist
+and that, therefore, confidence intervals need to be very wide. How
+wide would the confidence interval be for \citet{lancet.1} if the
+data from Falluja were included? Without more details on the precise
+methodology used, it is hard to say. \citet{lancet.1} do admit that:
+
+
+\begin{quote}
+  During the period before the invasion, from Jan 1, 2002, to March
+  18, 2003, the interviewed households had 275 births and 46 deaths.
+  The crude mortality rate was 5.0 per 1,000 people per year (95\% CI
+  3.7 -- 6.3; design effect of cluster survey = 0.81). Of the deaths,
+  eight were infant deaths (29 deaths per 1,000 livebirths [95\% CI 0
+  -- 64]). After the invasion, from March 19, 2003, to mid-September,
+  2004, in the interviewed households there were 366 births and 142
+  deaths -- 21 deaths were children younger than 1 year. The crude
+  mortality rate during the period of war and occupation was 12.3 per
+  1,000 people per year (95\% CI 1.4 -- 23.2; design effect = 29.3) and
+  the estimated infant mortality was 57 deaths per 1,000 livebirths
+  (95\% CI 30 -- 85).
+\end{quote}
+
+Note the huge design effect (29.3) in the results for post-invasion
+mortality when Falluja is included. In other words, the authors have
+almost no idea what post-invasion mortality in Iraq actually is! It
+could be as low as 1.4 per 1,000 per year (making Iraq the healthiest
+country on Earth) or as high as 23.2 per 1,000. The dramatic
+clumping of death within clusters (caused by Falluja)
+precludes any firm inferences about post-invasion mortality.
+
+The authors get around this problem by ignoring it. 
+
+\begin{quote}
+  
+  We tabulated data and calculated the number of births, deaths, and
+  person-months associated with every cluster. For every period of
+  analysis, crude mortality, expressed as deaths per 1,000 people per
+  year, was defined as: (number of deaths recorded/number of
+  person-months lived in the interviewed households) x 12 x 1,000. We
+  estimated the infant mortality rate as the ratio of infant deaths to
+  livebirths in each study period and presented this rate as deaths
+  per 1,000 livebirths.  Mortality rates from survey data were analysed
+  by software designed for Save the Children by Mark Myatt (Institute
+  of Ophthalmology, UCL, London, UK), which takes into account the
+  design effect associated with cluster surveys, and reconfirmed with
+  EpiInfo 6.0. We estimated relative and attributable rates with
+  generalised linear models in STATA (release 8.0). To estimate the
+  relative risk, we assumed a log-linear regression in which every
+  cluster was allowed to have a separate baseline rate of mortality
+  that was increased by a cluster-specific relative risk after the
+  war. We estimated the average relative rate with a conditional
+  maximum likelihood method that conditions on the total number of
+  events over the pre-war and post-war periods, the sufficient
+  statistic for the baseline rate. We accounted for the variation in
+  relative rates by allowing for overdispersion in the regression.
+  As a check, we also used bootstrapping to obtain a non-parametric
+  confidence interval under the assumption that the clusters were
+  exchangeable. The confidence intervals reported are those obtained
+  by bootstrapping. [Footnotes omitted.]
+
+\end{quote}
+
+There is a fair amount going on in this description and, without more
+detail and access to the underlying data, no outsider can reproduce
+the reported results. Yet I \emph{think} that the key is that the
+authors report confidence intervals for the relative risk using a
+bootstrap procedure. Even though they have no good estimate of
+post-invasion mortality (when Falluja is included), they can make this
+uncertainly ``disappear'' with the bootstrap. 
+
+A standard cluster sample confidence interval calculation
+(\citet{groves}) would force them to include the uncertainty
+associated with the huge design effect, would ensure that they allow
+for the \emph{possibility} of a cluster with a decrease in mortality
+similar to the increase measured in Falluja. Such a confidence
+interval would, in all likelihood, include zero.
+
+One way to \emph{guess} at the correct confidence interval is to note
+that the design effect in the data when Falluja is included is almost
+15 times greater than when it is excluded.
+
+\begin{quote}
+  More than a third of reported post-attack deaths (n = 53), and
+  two-thirds of violent deaths (n = 52) happened in the Falluja
+  cluster. This extreme statistical outlier has created a very broad
+  confidence estimate around the mortality measure and is cause for
+  concern about the precision of the overall finding. If the Falluja
+  cluster is excluded, the post-attack mortality is 7.9 per 1,000
+  people per year (95\% CI 5.6 -- 10.2; design effect = 2.0).
+\end{quote}
+
+The design effect is the ratio of the sampling variance for a
+statistic computed under the cluster plan to the sampling variance for
+the same statistic computed with a simple random sample. Since the
+denominator for the design effect with Falluja included and excluded
+is the same, the variance for estimates of statistics like the
+mortality rate should be approximately 15 times larger if the Falluja
+data is included. If the confidence interval without Falluja is 8,000
+to 194,000 excess deaths then it \emph{may be} that the confidence
+interval including Falluja is -400,000 to 1,000,000.\footnote{This
+  calculation is very rough. I assume that the confidence interval
+  should increase in proportion to the square root of the increase in
+  the design effect: $(194,000 - 8,000) * sqrt(29.3/2.0) \approx
+  700,000$. This new confidence interval would be centered around
+  300,000 since the authors report that the estimate for Falluja
+  ``indicates a point estimate of about 200,000 excess deaths in the
+  3\% of Iraq represented by this cluster'' and $98,000 + 200,000
+  \approx 300,000$. Again, if the authors will release the underlying
+  data and computer code, we can determine the correct confidence
+  interval. Comments on this calculation are welcome.}
+
+% Might add some stuff on what the reaction would have been in the press.
 
 \section*{Data from \citet{lancet.2}}
 
 I have performed a series of manipulations to the raw data as
 distributed by the authors. See the functions \texttt{prep.deaths()}
 and \texttt{prep.houses()} for details. Each function produces a data
-frame. Call them \textbf{deaths} and \textbf{houses}. With
-\Sexpr{dim(deaths)[1]} rows and \Sexpr{dim(deaths)[2]} variables,
+frame. Call them \textbf{deaths} and \textbf{houses}. 
+
+\subsection*{\textbf{deaths}}
+
+With \Sexpr{dim(deaths)[1]} rows and \Sexpr{dim(deaths)[2]} variables,
 \textbf{deaths} includes a row for every death recorded in the study.
 The variables are:
 
@@ -116,13 +333,20 @@ The variables are:
   
 \item[governorate] The governorate in which the household of the
   deceased is located. There are 18 governorates in Iraq, but
-  miscommunication led to only \Sexpr{nlevels(governorate)} being
+  ``miscommunication'' led to only \Sexpr{nlevels(governorate)} being
   sampled by the survey team.
   
 \item[cluster] The cluster in which the household of the deceased was
   located. There are \Sexpr{nlevels(cluster)} clusters. Clusters are
-  numbered from 1 to 51. Numbers 17, 19, 29 and 50 are missing. The
-  authors sampled 50 clusters, but three were discarded.
+  numbered from 1 to 52. Numbers 17, 19, 29, 50 and 52 are missing.
+  The authors sampled 52 clusters, but five were discarded. Falluja
+  was purposely (\citet{burnham.mit.2007} and private communication)
+  oversampled (3 clusters instead of 1) to check on the mortality
+  estimate from \citet{lancet.1}. One of the three was selected at
+  random (51) for inclusion while the other two (50 and 52) were
+  discarded. Three other clusters (17, 19 and 29) were sampled by
+  mistake. Removing the three mistakes and the two extra Falluja
+  clusters leaves a final sample of 47.
   
 \item[date] The death month. Although the actual date of death was
   recorded by the interviewers, the authors transform all dates to the
@@ -138,8 +362,26 @@ table(deaths$year)
 
 The survey ended in July 2006, so mortality has increased every year.
 
-\item[sex] There were \Sexpr{dim(subset(deaths, sex=="male"))[1]} male
-  deaths and \Sexpr{dim(subset(deaths, sex=="female"))[1]} female
+\item[invasion] A binary variable (with values ``pre'' and ``post'') indicating whether the death
+  occurred before or after the invasion in March 2003. This is
+  provided even when there is no date of death. There are
+  \Sexpr{dim(subset(deaths, invasion=="post"))[1]} deaths
+  post-invasion and \Sexpr{dim(subset(deaths, invasion=="pre"))[1]} deaths 
+  pre-invasion.
+  
+\item[impute] A TRUE/FALSE flag indicating whether an imputation was
+  done to fill in the year and invasion variables even if the
+  date of death was missing. There are \Sexpr{dim(subset(deaths, impute==TRUE))[1]} TRUE 
+values for impute. In each of these cases,
+  date is NA. There are a total of \Sexpr{sum(is.na(deaths$date))} NA
+  dates. For the \Sexpr{sum(is.na(deaths$date)) - sum(deaths$impute)}
+    observations with NA date and impute equal to FALSE, the
+    interviewers were able to establish the year and whether or not
+    the death happened after the invasion, so no imputation was
+    necessary.
+
+\item[sex] There were \Sexpr{sum(deaths$sex %in% c("male"))} male
+  deaths and \Sexpr{sum(deaths$sex %in% c("female"))} female
   deaths.
   
 \item[age] The age of the deceased person. Summary statistics are:
@@ -156,25 +398,9 @@ summary(age)
 table(sex, age.group)
 @ 
 
-This ignores the 19 deaths with NA age.
+% Should add an ``unknown'' column here and delete next line.
 
-\item[post.invasion] A binary variable indicating whether the death
-  occurred before or after the invasion in March 2003. This is
-  provided even when there is no date of death. There are
-  \Sexpr{dim(subset(deaths, post.invasion=="yes"))[1]} deaths
-  post-invasion and \Sexpr{dim(subset(deaths, post.invasion=="no"))[1]} deaths 
-  pre-invasion.
-  
-\item[impute] A TRUE/FALSE flag indicating whether an imputation was
-  done to fill in the year and post.invasion variables even if the
-  date of death was missing. There are \Sexpr{dim(subset(deaths, impute==TRUE))[1]} TRUE 
-values for impute. In each of these cases,
-  date is NA. There are a total of \Sexpr{sum(is.na(deaths$date))} NA
-  dates. For the \Sexpr{sum(is.na(deaths$date)) - sum(deaths$impute)}
-    observations with NA date and impute equal to FALSE, the
-    interviewers were able to establish the year and whether or not
-    the death happened after the invasion, so no imputation was
-    necessary.
+This ignores the \Sexpr{sum(is.na(deaths$age))} deaths with NA age.
   
 \item[cause.summary] A brief summary that describes the cause of death
   using one of \Sexpr{length(unique(cause.summary))} different
@@ -194,7 +420,7 @@ sort(table(deaths$cause.summary), decreasing=TRUE)[1:5]
 table(deaths$death.nature, deaths$age.group, dnn = NULL)
 @ 
 
-This ignores the 19 deaths with NA age.
+This ignores the \Sexpr{sum(is.na(deaths$age))} deaths with NA age.
 
 \item[cause.category] The authors aggregate cause.summary into
   \Sexpr{nlevels(deaths$cause.category)} higher level categories.
@@ -203,13 +429,32 @@ This ignores the 19 deaths with NA age.
 table(deaths$cause.category)
 @ 
 
-\item[has.certificate] A binary variable indicating whether a death
-  certificate was presented to the interviewers or not. There are
-  \Sexpr{dim(subset(deaths, is.na(has.certificate)))[1]} NA entries.
-  \citet{burnham.mit.2007} reports that the NA cases arose when the
-  interviewer ``forgot'' to ask for a certificate.
+\item[certificate] A variable with one of three values: ``yes'' if a
+  death certificate was available, ``no'' if a death certificate was
+  not available, or ``forgot'' if the interviewers failed to ask
+  for one. \citet{burnham.mit.2007} notes:
+
+  \begin{quote}
+    So this time [\cite{lancet.2} rather than \citet{lancet.1}] our
+    intent was to ask every household where a death was reported for a
+    death certificate. Now, if you have done survey work you know you
+    don't always get all the answers you want. And, in this case, in
+    13\% of cases the interviewers forgot to ask for the death
+    certificate.
+  \end{quote}
+
+Forgetfullness is not evenly distributed across clusters.
+
+<<echo=false>>=
+table(deaths$governorate, deaths$certificate, dnn = c("Governorate", "Death Certificate Status"))
+@ 
+
+It is not clear why interviewers were so much more likely to forget to
+ask for death certificates in Baghdad.
 
 \end{itemize}
+
+\subsection*{\textbf{houses}}
 
 The second data frame, \textbf{houses}, has \Sexpr{dim(houses)[1]}
 rows and \Sexpr{dim(houses)[2]} variables, one of which (id) can be
@@ -244,19 +489,19 @@ table(houses$deaths)
 @ 
 
 \item[immigration] The number of immigrants to the household.  There
-  are \Sexpr{dim(subset(houses, immigration==0))[1]} houses with zero
+  are \Sexpr{sum(houses$immigration %in% c(0))} houses with zero
   immigrants. The summary statistics of the remaining households are:
 
 <<echo=false>>=
-summary(houses$immigration[houses$immigration>1])
+summary(houses$immigration[houses$immigration>=1])
 @ 
 
 \item[emigration] The number of emigrants from the household.  There
-  are \Sexpr{dim(subset(houses, emigration==0))[1]} houses with zero
+  are \Sexpr{sum(houses$emigration %in% c(0))} houses with zero
   emigrants. The summary statistics of the remaining households are:
 
 <<echo = false>>=
-summary(houses$emigration[houses$emigration>1])
+summary(houses$emigration[houses$emigration>=1])
 @ 
 
 <<echo = false>>=
@@ -265,54 +510,50 @@ y <- houses$size.2002 - (houses$size - houses$births + houses$deaths)
 
 \item[size.2002] The number of household members on January 1, 2002.
   This is the number of members at the time of the survey (size) minus
-  births plus deaths.  For \Sexpr{table((y!=0))[2]} observations, this
-  does not add up. These mistakes occurred in 3 clusters (34, 36 and
-  49).  As with size, there are \Sexpr{sum(is.na(houses$size.2002))}
-  NA values, and the NA values for size.2002 are for the same rows as
-  the NA values for size.
-
-  \item[size.2002.mig] The number of members of the household as of
-  January 1, 2002, including migration: size minus births plus deaths
-  minus immigration plus emigration. There are no further errors in
-  the migration calculations other than those also occurring in
-  size.2002.  However, there are \Sexpr{dim(subset(subset(houses, is.na(size.2002.mig)), !is.na(size.2002)))} more NA values in
-  size.2002.mig than in size.2002. But, there are no NA values in
-  immigration or emigration, so it is not clear where these additional
-  NAs come from.
+  births plus deaths.  As with size, there are
+  \Sexpr{sum(is.na(houses$size.2002))} NA values, consistent with
+  those for size.
   
 \item[mid.2002] The average of size and size.2002. There are
   \Sexpr{sum(is.na(houses$size.2002))} NA observations, consistent
-  with the NAs in size.2002.
+  with the NAs in size and size.2002.
   
-\item[mid.2002.mig] The average of size and size.2002.mig. There are
-  \Sexpr{sum(is.na(houses$size.2002.mig))} NA observations, consistent
-  with the NAs in size.2002.mig.
-
 \item[has.death] A binary variable indicating if there were any deaths
   in the household. There are
   \Sexpr{dim(subset(houses, houses$has.death=="yes"))[1]} households
   with at least one death.
 
-\item[deaths.violent] The number of violent deaths.
+\item[deaths.violent] The number of violent deaths per household.
 
 <<echo=false>>=
 table(houses$deaths.violent)
 @ 
 
-\item[deaths.nonviolent] The number of non-violent deaths.
+\item[deaths.nonviolent] The number of non-violent deaths per household.
 
 <<echo=false>>=
 table(houses$deaths.nonviolent)
 @ 
 
-Note that the number of violent/non-violent deaths is inconsistent
-between the \textbf{deaths} and \textbf{houses} data frames. In
-\textbf{deaths}, there are 302 violent deaths and 327 non-violent
-deaths, just as \citet{lancet.2} reports. In
-the \textbf{houses} data frame, there are
-\Sexpr{sum(houses$deaths.violent)} violent deaths and
-\Sexpr{sum(houses$deaths.nonviolent)} non-violent ones. It is not
-clear what the reason is for this discrepancy.
+% Note that the death dist per household has changed significantly between
+% the two versions of the dataset.
+%
+% For deaths.violent, for instance, the old distribution was:
+%
+%    0   1  2 3
+% 1562 269 14 4
+%
+% while the new distribution is
+%
+%    0   1  2 3 7
+% 1598 208 39 3 1
+%
+% Note in particular the large increase in the new data of households
+% with 2 deaths.
+%
+% We haven't investigated this.
+
+
 
 % Not sure if I want to study the merged data frame more closely, but here it is.
 % I should look at the observations that don't fit.
@@ -326,16 +567,17 @@ x <- merge(deaths, houses, by = c("id", "governorate", "cluster"), all = TRUE)
 
 \section*{Comments}
 
-This section provides a guided tour of some of the more interesting features of the data frames.
+This section provides a guided tour of some of the more interesting features of the data.
 
 \subsection*{Clusters}
 
 
 The clusters in the data set are labeled from 1 to 51, with missing
-numbers at 17, 19, 29 and 50. In general, cluster numbers are grouped
-within governorates. For example, the three Thi-Qar clusters are 11,
-12 and 13.  The five in Ninewa are 34 -- 38. The two in Saleh Al-Din
-are 47 and 48. A prominent exception to this pattern is Baghdad, which
+numbers at 17, 19, 29 and 50.\footnote{As discussed above, 52 is also
+  missing.} In general, cluster numbers are grouped within
+governorates. For example, the three Thi-Qar clusters are 11, 12 and
+13.  The five in Ninewa are 34 -- 38. The two in Saleh Al-Din are 47
+and 48. A prominent exception to this pattern is Baghdad, which
 includes clusters 14 -- 24 (with 17 and 19 missing), 33, 39 and 40.
 
 \citet{lancet.2} state:
@@ -353,18 +595,39 @@ includes clusters 14 -- 24 (with 17 and 19 missing), 33, 39 and 40.
   households in 47 randomly selected clusters.
 \end{quote}
 
-It is not clear why there is a cluster numbered 51 (located in Anbar)
-if the original plan called for only 50 clusters. The other two Anbar
-clusters are 30 and 31.
-
+Cluster 51 was in Falluja. The other two Anbar clusters are 30 and 31.
 \citet{burnham.mit.2007} mentions that they sampled three clusters in
 Falluja (which is in the Anbar province) even though the plan called
 for only one cluster. They did this because the Falluja data from
 \citet{lancet.1} was such an outlier that they wanted a better
 estimate for this violent city. Having interviewed in three clusters,
 the authors then selected one of the three randomly. The selected
-cluster was the least violent of the three. It seems plausible that
-this ``extra'' cluster is 51.
+cluster was the least violent of the three. This was cluster 51. The
+other two clusters in Falluja were numbered 50 and 52. The authors
+have declined to release the data for these two clusters.  Rather than
+picking one of the three clusters to use, averaging over all three
+would generate a more precise estimate of the change in mortality.
+
+Clusters 17, 19 and 29 were excluded from the analysis. The authors
+have refused to release the data for these clusters as well. For 2 of
+the three, it is unclear how the authors knew to exclude these
+specific clusters.\footnote{It is easy to determine that the Wassit
+  cluster which was (mistakenly) moved to Baghdad should be excluded.
+  But how did the authors decide which other two clusters to ignore?
+  My \emph{understanding} is that the authors wanted to have at least
+  one cluster in each governorate. Unfortunately, the Iraqi survey
+  teams failed to follow the correct procedure. Instead, they
+  allocated clusters to governorates in proportion to population,
+  without ensuring that each governorate received at least one
+  cluster. Such mistakes happen in field work all the time. It is fair
+  to say that two of the clusters should have been in Muthanna and
+  Dahuk. But how can the authors determine which of the 50 clusters
+  were the ``mistakes,'' were the clusters that would not have been
+  sampled had the survey teams followed the correct procedure?} As
+long as these three clusters are similar to the 47 included in the
+analysis, there should not be much of a problem. But, if those
+clusters are very different, either much more or less violent, then
+there might be a problem.
 
 \subsection*{Interview Procedure}
 
@@ -389,15 +652,52 @@ The clusters with 41 households were 23 (Baghdad) and 37 (Ninewa).
 Those with fewer than 38 were 3 (Najaf), 9 (Babylon) and 26
 (Sulaymaniyah). This variation is troubling. If clusters in violent
 regions had more interviews than those in less violent regions, the
-calculated mortality rate might be too high.
-This problem may have occurred.  For example, Sulaymaniyah (in the
-Kurdish north) should have featured 120 interviews, 40 for each of the
-three clusters. Instead, only
+calculated mortality rate \emph{might} be too high.  This problem may
+have occurred.  For example, Sulaymaniyah (in the Kurdish north)
+should have featured 120 interviews, 40 for each of the three
+clusters. Instead, only
 \Sexpr{table(houses$governorate)[["Sulaymaniyah"]]} households were
 interviewed. Since Sulaymaniyah featured \emph{no} violent deaths,
 interviewing fewer households there inflates the estimate of
-post-invasion violent mortality in Iraq.\footnote{This would
-  depend on the precise method used to calculate excess mortality. If the calculation were based on estimating mortality within each cluster and then aggregating these cluster estimates, it would not bias the results if less violent clusters had more interviews.}
+post-invasion violent mortality in Iraq.\footnote{This would depend on
+  the precise methodology used to calculate excess mortality. If the
+  calculation were based on estimating mortality within each cluster
+  and then aggregating these cluster estimates, it would not bias the
+  results if less violent clusters had more interviews. In private
+  communication, Shannon Doocy reports that just such a cluster-based
+  estimation strategy was used. Yet the paper reports:
+
+  \begin{quote}
+    Data entry and analysis was done with Microsoft Excel, SPSS
+    version 12.0, and STATA version 8. Period mortality rates were
+    calculated on the basis of the mid-interval population and with
+    regression models. Mortality rates and relative risks of mortality
+    were estimated with log-linear regression models in STATA. To
+    estimate the relative risk, we used a model that allowed for a
+    baseline rate of mortality and a distinct relative rate for three
+    14-month intervals post-invasion --- March, 2003 -- April,
+    2004, May, 2004 -- May, 2005, and June, 2005 -- June, 2006.
+    The SE for mortality rates were calculated with robust variance
+    estimation that took into account the correlation between rates of
+    death within the same cluster over time. The log-linear
+    regression model assumed that the variation in mortality rates
+    across clusters is proportional to the average mortality rate; to
+    assess the effect of this assumption we also obtained
+    non-parametric CIs by use of bootstrapping. As an additional
+    sensitivity analysis, we assessed the effect of differences across
+    clusters by extending models to allow the baseline mortality rate
+    to vary by cluster. [Footnotes omitted.]
+  \end{quote}
+  
+  In general, a ``robust variance estimation'' would make use of
+  sample size information. A cluster with 1,000 observations provides
+  more precise estimates than one with 10. Again, without access to
+  the details of the exact models (ideally the precise commands used
+  in Stata and SPSS), it is impossible for any outsider to know
+  whether or not varying sample sizes across clusters, correlated as
+  they are with cluster mortality, influences the results.
+
+}
 
 Yet the claim that interviews were conducted until 40 households
 agreed to participate is contradicted elsewhere in the article.
@@ -433,17 +733,17 @@ correlation between this missingness and other variables.
   with certificates.
 \end{quote}
 
-There were \Sexpr{sum(deaths$has.certificate %in% c("yes"))} deaths with
-death certificates, \Sexpr{sum(deaths$has.certificate %in% c("no"))}
-  without and  \Sexpr{sum(is.na(has.certificate))}
-  observations with NA values. The two locations with the largest number of NA values were both in Baghdad: cluster 33 (\Sexpr{sum(is.na(deaths$has.certificate) & deaths$cluster %in% c(33))} deaths) and cluster 24 
-(\Sexpr{sum(is.na(deaths$has.certificate) & deaths$cluster %in% c(24))} deaths).
+There were \Sexpr{sum(deaths$certificate %in% c("yes"))} deaths with
+death certificates, \Sexpr{sum(deaths$certificate %in% c("no"))}
+  without and  \Sexpr{sum(deaths$certificate %in% c("forgot"))}
+  observations where the interviewer forgot to ask for one. The two locations with the largest number of ``forgot'' values were both in Baghdad: cluster 33 (\Sexpr{sum(deaths$certificate %in% "forgot" & deaths$cluster %in% c(33))} deaths) and cluster 24 
+(\Sexpr{sum(deaths$certificate %in% "forgot" & deaths$cluster %in% c(24))} deaths).
 
-There were \Sexpr{sum(is.na(deaths$date) & deaths$has.certificate %in% c("yes"))} deaths 
+There were \Sexpr{sum(is.na(deaths$date) & deaths$certificate %in% c("yes"))} deaths 
   for which a certificate was provided, but no date of death is
   listed. This is interesting as one would expect that death
   certificates provide the date of death.  There were
-\Sexpr{sum(is.na(deaths$date) & deaths$has.certificate %in% c(NA))} deaths 
+\Sexpr{sum(is.na(deaths$date) & deaths$certificate %in% c("forgot"))} deaths 
 for which the death certificate was not asked for and the date of death is NA. It would seem especially important to ask for a death certificate when the interviewee can not recall the date of death. 
 
 
@@ -456,29 +756,53 @@ ask for a certificate if the death occurred in 2006 rather than 2002.
 % Sure would be nice to have some percentages in these tables.
 
 <<echo=false>>=
-table(! is.na(deaths$has.certificate), deaths$year, dnn = c("Asked For Death Certificate", "Year"))
+table(deaths$certificate, deaths$year, dnn = c("Death Certificate Status", "Year"))
 @ 
 
 Of the 64 deaths in 2002, the interviewers forgot to ask for a death
-certificate 3\% of the time. This percentage increases steadily until
-it hits 24\% in 2006. There is correlation with the nature of the
-death as well.
+certificate 3\% of the time. In 2006, it hits 24\%. Comparing pre-invasion and post-invasion forgetfullness yields the same result.
 
 <<echo=false>>=
-table(! is.na(deaths$has.certificate), deaths$death.nature, dnn = c("Asked For Death Certificate", "Nature of Death"))
+table(deaths$certificate, deaths$invasion, dnn = c("Death Certificate Status", "Invasion"))
+@ 
+
+Why are interviewers more than twice as likely (14\% versus 6\%) to
+forget to ask for a death certificate if the death occured after the
+invasion? A similar issue arises with the nature of the death.
+
+<<echo=false>>=
+table(deaths$certificate, deaths$death.nature, dnn = c("Death Certificate Status", "Nature of Death"))
 @ 
 
 It is unclear why the nature of a death would make an interviewer more
 likely to forget to ask for a death certificate. In the case of
 non-violent deaths, the interviewers forget to ask 4\% of the time.
-For violent deaths, the forget-to-ask rate is 23\%.
+For violent deaths, the forget-to-ask rate is 23\%.\footnote{In
+  private correspondence, the authors note that this sort of analysis
+  ought to be conducted at the level of households rather than
+  individual deaths since deaths without certificates are often
+  clustered (?) within households.  The authors also note that
+  these patterns may have been driven by variations in forgetfulness
+  which are correlated with violence levels across governorates.
+  Interviewers forgot to ask for death certificates much more often in
+  governorates with moderate levels of post-invasion violence.  Of the 
+  \Sexpr{sum(deaths$certificate %in% c("forgot"))} forgot-to-ask deaths, 
+    \Sexpr{sum(deaths$certificate %in% c("forgot") & deaths$governorate %in% c("Baghdad"))} were in Baghdad with 
+      \Sexpr{sum(deaths$certificate %in% c("forgot") & deaths$governorate %in% c("Baghdad") & deaths$date %in% as.Date("2006-07-01"))} of 
+        these in the last few weeks of the survey. I hope
+       to do further analysis on these topics in the next draft.}
+
+% At some point, I want to try and replicate the mortality calculations. Doocy reports 
+% that these uses the 2004 mid estimates with just births and deaths. Immigration/emigration is
+% ignored for these. I at least want to do this on the cluster level, if only to replicate
+% their version of the color-coded map.
 
 \subsection*{Cluster 33}
 
 Cluster 33 has a total of \Sexpr{sum(deaths$cluster == 33)}
-deaths. All \Sexpr{sum(is.na(deaths$has.certificate) & deaths$cluster == 33)} of
-the deaths with NA death certificates had the same cause
-(``\Sexpr{as.character(unique(subset(subset(deaths, cluster==33), is.na(has.certificate))["cause.summary"])[1,1])}'') and occurred in
+deaths. All \Sexpr{sum(deaths$certificate %in% "forgot" & deaths$cluster == 33)} of
+the deaths where the interviewers failed to ask for a death certificate had the same cause
+(``\Sexpr{as.character(unique(subset(subset(deaths, cluster==33), certificate %in% "forgot")["cause.summary"])[1,1])}'') and occurred in
 the same month (July 2006). Since data
 collection ended on July 10th, these deaths must have happened prior to 
 that date. It is not clear why death certificates were not asked for.
@@ -510,25 +834,44 @@ table(y$period)
 There were no deaths from car bombs prior to 2004, but mortality was
 largely constant for the 2.5 years from January 2004 through June
 2006. There were 6 deaths in 2004, 6 in 2005 and 2 in the first six
-months of 2006.  The entire rise in car bombs deaths come from the
+months of 2006.  The entire rise in car bombs deaths comes from the
 data for one month in one cluster.
 
-The second problem with this cluster is the implications of having so
-many deaths from car bombs (or, more likely, a single car bomb) centered on
-a single neighborhood. \citet{msb} argue that the methodology of
+The second problem with this cluster is having so many deaths from car
+bombs (or, more likely, a single car bomb) centered on a single
+neighborhood. \citet{msb} argue that the methodology of
 \citet{lancet.2} generated a ``main street bias'' because interviewers
-  were more likely to select households near main streets where
-  violence is more common. This cluster would seem to provide evidence
-  that main street bias might be a concern.
+were more likely to select households near main streets where violence
+is more common. This cluster would seem to provide evidence that main
+street bias might be a concern.\footnote{The authors argue that a
+  weakness of the main street bias argument is that requires that
+  deaths occur at or close to home. If this car bomb exploded in a
+  market which served the neighborhood in which these victims lived,
+  it is likely to have injured people from throughout the
+  neighborhood, whether they lived on a main street, a side street or
+  an out-of-the-way alley. Main street bias is only a concern if the
+  deaths caused by this car bomb were from households on the street on
+  which the car bomb exploded. The authors argue that most deaths
+  occur away from home and that, therefore, main street bias is not a
+  concern.}
 
 \section*{Conclusion}
 
 I hope that this brief description of the data is useful to those who
-are interested in the Lancet articles but do not have access to the
+are interested in \emph{The Lancet} articles but do not have access to the
 data and that the tools provided here are also useful to those who
 have such access. I hope to extend this article in the near future to
 include more analysis. Please contact me with suggestions.
 
 \bibliography{mortality}
+
+% The authors mention something about person-year calculations in the second data release.
+% I need to look into that.
+
+% Next draft should put all the data discussion in an appendix.
+
+% Need to label figure (and refer to it) and provide proper caption.
+
+% Tables should show percentages directly.
 
 \end{document}

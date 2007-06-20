@@ -1,0 +1,17 @@
+6f4ef4a8b7ed65b13e6c08b15bdd05cb *DESCRIPTION
+fa7f17568355d1ad9c7d88ed657f88d1 *NAMESPACE
+4a7ace30d695c8824037c8658afa4eeb *R/prep.deaths.R
+3ed3840384d639e271c7834892da23c8 *R/prep.houses.R
+72519ced79a4b6c7fdcdc5307e2560d4 *R/prepdata.R
+6233f15f242728997ab926441be304bd *data/lancet1.RData
+0ebb8c4e49805d16d5449ef3efa302e8 *inst/doc/Makefile
+082907352a99c55d122085ce87b05e74 *inst/doc/lancet1.xls
+1ef3bdc21204812e593a80c491bf4de9 *inst/doc/mortality.Rnw
+afa79e7310ea1f8224936d167e7cf28e *inst/doc/mortality.pdf
+baac824f3787284273c2ab179dff4070 *inst/doc_rnw/mortality.Rnw
+7971a0ae5a961c44534331c7182ca2a9 *inst/doc_rnw/mortality.bib
+1638bc60c83ad86ab0ffbcf782822450 *inst/doc_rnw/mortality.pdf
+e7416ce54e25aade715abbd78f458418 *man/lancet.iraqmortality-package.Rd
+9ccfe25d3009206d4c6395b6a49193a1 *man/lancet1.Rd
+b98e13590482f72241b2852366933329 *man/prep.deaths.Rd
+104e4dd999080ef7b474e223cf763eb0 *man/prep.houses.Rd

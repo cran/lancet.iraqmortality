@@ -1,4 +1,4 @@
-%\VignetteIndexEntry{Examining the dataset from the Lancet study on Iraq Mortality}
+%\VignetteIndexEntry{The Lancet Surveys of Mortality in Iraq}
 %\VignetteDepends{}
 
 \documentclass[11pt]{article}
